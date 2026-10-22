@@ -595,11 +595,10 @@ function setupConn(c) {
   conn = c;
   c.on('open', () => {
     clearTimeout(joinTimer);
+    showGame();
     if (role === 'host') {
-      showGame();
       $('#themTag').textContent = theirName || 'Friend';
     } else if (role === 'guest') {
-      showGame();
       send({ t: 'hello', name: myName });
     }
   });
@@ -696,6 +695,7 @@ function onMsg(m) {
   switch (m.t) {
     case 'hello':
       theirName = String(m.name || 'Friend').slice(0, 14);
+      showGame();
       $('#themTag').textContent = theirName;
       if (role === 'host') { send({ t: 'hello', name: myName }); startNewGame(false); }
       break;
