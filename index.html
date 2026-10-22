@@ -408,12 +408,22 @@ function toast(msg, ms = 3400) {
 const nameOf = side => (side === role ? 'You' : (G?.names?.[side] || theirName));
 
 /* ---------- screens ---------- */
+function ensureLocalVideo() {
+  if (!local) return;
+  const targets = [$('#homeVideo'), $('#meVideo')];
+  for (const v of targets) {
+    if (v && !v.srcObject) v.srcObject = local;
+  }
+  if (activeVideo && !activeVideo.srcObject) activeVideo.srcObject = local;
+}
 function showScreen(name) {
   $('#home').hidden = name !== 'home';
   $('#game').hidden = name !== 'game';
   $('#roomBar').hidden = name !== 'game';
   activeVideo = name === 'home' ? $('#homeVideo') : $('#meVideo');
+  ensureLocalVideo();
   lastVT = -1;
+  lastTs = 0;
   window.scrollTo(0, 0);
 }
 function openSheet(kind, html) {
@@ -493,8 +503,8 @@ function startLoop() {
   if (rafId) return;
   const loop = () => {
     rafId = requestAnimationFrame(loop);
-    const v = activeVideo;
-    if (!landmarker || !v || v.readyState < 2 || !v.videoWidth || v.currentTime === lastVT) return;
+    const v = activeVideo || $('#meVideo') || $('#homeVideo');
+    if (!landmarker || !v || !v.srcObject || v.readyState < 2 || !v.videoWidth || v.currentTime === lastVT) return;
     const ts = performance.now();
     if (ts - lastTs < 30) return;
     lastVT = v.currentTime; lastTs = ts;
@@ -650,6 +660,7 @@ async function joinRoom() {
 }
 function showGame() {
   showScreen('game');
+  ensureLocalVideo();
   $('#meTag').textContent = myName;
   $('#roomChip').textContent = roomCode || '';
   setBall('vs', true);
