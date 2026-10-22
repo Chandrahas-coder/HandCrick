@@ -1,0 +1,958 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#CDE7F0">
+<title>Hand Cricket</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='46' fill='%23D8352A' stroke='%230F2A24' stroke-width='6'/%3E%3Cpath d='M30 14C46 34 46 66 30 86M70 14C54 34 54 66 70 86' fill='none' stroke='%23FFFDF6' stroke-width='5' stroke-dasharray='8 7'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bagel+Fat+One&family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --sky:#CDE7F0; --ink:#0F2A24; --grass:#2F7D4F; --grass-dark:#1E5236;
+  --ball:#D8352A; --sun:#F6C445; --chalk:#FFFDF6;
+  --r-lg:28px; --r-md:18px; --stroke:2.5px solid var(--ink);
+  --display:'Bagel Fat One','Arial Rounded MT Bold','Trebuchet MS',system-ui,sans-serif;
+  --body:'Instrument Sans',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+[hidden]{display:none !important}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;min-height:100dvh;background:var(--sky);color:var(--ink);font-family:var(--body);font-size:1rem;line-height:1.45;overflow-x:hidden}
+button,input{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--ink);outline-offset:3px}
+
+/* the pitch strip along the bottom */
+.field{position:fixed;left:0;right:0;bottom:0;height:44px;background:var(--grass);border-top:var(--stroke);z-index:0}
+.field::before{content:"";position:absolute;left:0;right:0;top:14px;height:3px;background:rgba(255,253,246,.6)}
+
+main{position:relative;z-index:1;max-width:1080px;margin:0 auto;padding:max(16px,env(safe-area-inset-top)) 16px 76px}
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:20px}
+.brand{display:flex;align-items:center;gap:10px;font:400 1.5rem/1 var(--display)}
+.brand svg{width:34px;height:34px;flex:none}
+.topr{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.chip{display:inline-flex;align-items:center;min-height:40px;padding:0 14px;border:var(--stroke);border-radius:999px;background:var(--chalk);font-weight:600;letter-spacing:.06em}
+
+/* buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;min-height:52px;padding:0 1.5rem;border:var(--stroke);border-radius:999px;background:var(--chalk);box-shadow:0 4px 0 var(--ink);font-weight:600;cursor:pointer;transition:transform .08s,box-shadow .08s,background .15s;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.btn:hover{background:#fff}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 var(--ink)}
+.btn.sun{background:var(--sun)} .btn.sun:hover{background:#FFD35E}
+.btn.red{background:var(--ball);color:var(--chalk)} .btn.red:hover{background:#E4463B}
+.btn.small{min-height:40px;padding:0 1rem;font-size:.92rem;box-shadow:0 3px 0 var(--ink)}
+.btn:disabled{opacity:.55;cursor:not-allowed}
+.linkbtn{background:none;border:0;padding:6px;text-decoration:underline;text-underline-offset:3px;cursor:pointer;font-weight:500}
+
+/* home */
+.home{display:grid;gap:32px;align-items:center}
+@media(min-width:900px){.home{grid-template-columns:1.05fr .95fr;gap:56px;min-height:calc(100dvh - 150px)}}
+h1{font:400 clamp(2.6rem,8vw,4.8rem)/1 var(--display);margin:0 0 14px;letter-spacing:-.01em}
+.lede{font-size:1.1rem;max-width:34ch;margin:0 0 24px}
+.form{display:grid;gap:12px;max-width:420px}
+.form label,.seg .lbl{font-weight:600;font-size:.95rem}
+.input{width:100%;min-height:52px;padding:0 18px;border:var(--stroke);border-radius:999px;background:var(--chalk);font-size:1.05rem;box-shadow:inset 0 2px 0 rgba(15,42,36,.08)}
+.input::placeholder{color:rgba(15,42,36,.5)}
+.code-in{text-transform:uppercase;letter-spacing:.18em;font-weight:600}
+.seg{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.seg .lbl{flex:0 0 100%;margin-bottom:-2px}
+.seg label{position:relative;font-weight:400}
+.seg input{position:absolute;opacity:0;inset:0;cursor:pointer}
+.seg span{display:grid;place-items:center;width:52px;height:44px;border:var(--stroke);border-radius:999px;background:var(--chalk);font-weight:600}
+.seg input:checked + span{background:var(--sun);box-shadow:0 3px 0 var(--ink);transform:translateY(-2px)}
+.seg input:focus-visible + span{outline:3px solid var(--ink);outline-offset:3px}
+.or{display:flex;align-items:center;gap:12px;margin:6px 0 0;font-weight:500}
+.or::before,.or::after{content:"";height:2.5px;flex:1;background:var(--ink);opacity:.2;border-radius:2px}
+.joinrow{display:flex;gap:10px}
+.rules{margin-top:22px;max-width:420px}
+.rules summary{cursor:pointer;font-weight:600}
+.rules ul{margin:10px 0 0;padding-left:1.2rem}
+.rules li{margin:4px 0}
+.fine{font-size:.9rem;margin:10px 0 0;opacity:.85}
+.preview{max-width:460px;width:100%;justify-self:center}
+.preview .cam{aspect-ratio:4/3}
+
+/* camera frames */
+.cam{position:relative;aspect-ratio:3/4;border:var(--stroke);border-radius:var(--r-lg);background:var(--grass-dark);overflow:hidden;box-shadow:0 5px 0 var(--ink)}
+.cam video{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:var(--grass-dark)}
+.cam.mine video{transform:scaleX(-1)}
+.camtop{position:absolute;top:10px;left:10px;right:10px;display:flex;justify-content:space-between;align-items:flex-start;gap:6px;z-index:2}
+.tag{max-width:100%;padding:4px 12px;background:var(--chalk);border:var(--stroke);border-radius:999px;font-weight:600;font-size:.9rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tag.soft{font-weight:500;font-size:.82rem}
+.badge{position:absolute;left:50%;bottom:12px;translate:-50% 0;z-index:2;display:grid;place-items:center;width:66px;height:66px;border-radius:50%;background:var(--chalk);border:var(--stroke);box-shadow:0 3px 0 var(--ink);font:400 2.4rem/1 var(--display)}
+.badge.pop{animation:pop .5s cubic-bezier(.2,1.6,.4,1)}
+@keyframes pop{from{transform:scale(.2) rotate(-24deg);opacity:0}to{transform:none;opacity:1}}
+.cam .cover{position:absolute;inset:0;display:grid;place-items:center;align-content:center;gap:12px;padding:16px;text-align:center;font-weight:500;z-index:1;color:var(--chalk)}
+
+/* game */
+.board{display:grid;grid-template-columns:1fr 1fr;gap:14px;max-width:880px;margin:0 auto 12px}
+.side{display:flex;flex-direction:column;gap:2px;min-width:0;padding:10px 14px 12px;border:var(--stroke);border-radius:var(--r-md);background:var(--chalk);box-shadow:0 4px 0 var(--ink);transition:background .2s}
+.side.bat{background:#FFF0BB}
+.side .nm{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.side .sc{font:400 clamp(2.4rem,9vw,3.6rem)/1 var(--display)}
+.role{display:inline-flex;align-items:center;gap:7px;font-size:.88rem;font-weight:600}
+.role::before{content:"";width:11px;height:11px;border-radius:50%;border:2px solid var(--ink);background:var(--sun)}
+.role.bowl::before{background:var(--ball)}
+.role.idle::before{background:transparent}
+.pips{display:flex;gap:5px;margin-top:4px;min-height:18px}
+.pip{width:10px;height:18px;border:2px solid var(--ink);border-radius:3px;background:var(--sun)}
+.pip.lost{background:transparent;opacity:.3}
+.target{max-width:880px;margin:0 auto 12px;text-align:center;font-weight:600;min-height:1.4em}
+.arena{position:relative;display:grid;grid-template-columns:1fr 1fr;gap:14px;max-width:880px;margin:0 auto}
+@media(min-width:720px){.arena .cam{aspect-ratio:4/3}}
+.ball{position:absolute;left:50%;top:50%;translate:-50% -50%;z-index:3;width:clamp(74px,17vw,112px);aspect-ratio:1;display:grid;place-items:center;pointer-events:none;filter:drop-shadow(0 4px 0 var(--ink))}
+.ball svg{position:absolute;inset:0;width:100%;height:100%}
+.ball span{position:relative;font:400 clamp(1.9rem,7vw,3rem)/1 var(--display);color:var(--chalk);text-shadow:0 2px 0 rgba(15,42,36,.5)}
+.ball.word span{font-size:clamp(.95rem,3.6vw,1.45rem)}
+.ball.tick span{animation:tick .5s ease-out}
+@keyframes tick{from{transform:scale(1.7);opacity:.1}to{transform:none;opacity:1}}
+.banner{max-width:880px;margin:20px auto 0;text-align:center;min-height:5.2rem}
+.banner .big{font:400 clamp(2.1rem,8vw,3.4rem)/1.05 var(--display)}
+.banner .big.out{color:var(--ball)}
+.banner .big.runs{color:var(--grass-dark)}
+.banner .sub{margin-top:6px;font-weight:500}
+.log{display:flex;justify-content:center;flex-wrap:wrap;gap:8px;list-style:none;padding:0;margin:14px 0 0;min-height:38px}
+.log li{display:grid;place-items:center;width:36px;height:36px;border:var(--stroke);border-radius:50%;background:var(--chalk);font:400 1.05rem/1 var(--display)}
+.log li.w{background:var(--ball);color:var(--chalk)}
+.padwrap{max-width:880px;margin:14px auto 0;text-align:center}
+.pad{display:flex;justify-content:center;gap:9px;flex-wrap:wrap}
+.pad button{width:50px;height:50px;border:var(--stroke);border-radius:50%;background:var(--chalk);box-shadow:0 3px 0 var(--ink);font:400 1.3rem/1 var(--display);cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.pad button:active{transform:translateY(2px);box-shadow:0 1px 0 var(--ink)}
+.pad button[aria-pressed=true]{background:var(--sun);transform:translateY(-2px)}
+
+/* sheets */
+.overlay{position:fixed;inset:0;z-index:20;display:grid;place-items:center;padding:16px;background:rgba(15,42,36,.62)}
+.sheet{width:min(440px,100%);max-height:100%;overflow:auto;padding:26px 22px;border:var(--stroke);border-radius:var(--r-lg);background:var(--chalk);box-shadow:0 6px 0 var(--ink);text-align:center}
+.sheet h2{font:400 clamp(1.9rem,7vw,2.6rem)/1.05 var(--display);margin:0 0 10px}
+.sheet p{margin:0 0 14px}
+.sheet .row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:6px}
+.sheet .code{font:400 clamp(2.6rem,12vw,3.8rem)/1 var(--display);letter-spacing:.14em;margin:6px 0 16px;padding-left:.14em}
+.sheet .score{font:400 1.6rem/1.2 var(--display);margin-bottom:6px}
+
+.toast{position:fixed;left:50%;top:max(14px,env(safe-area-inset-top));translate:-50% 0;z-index:30;max-width:min(92vw,460px);padding:12px 18px;border:var(--stroke);border-radius:var(--r-md);background:var(--ink);color:var(--chalk);font-weight:500;text-align:center;box-shadow:0 4px 0 rgba(15,42,36,.35)}
+
+.curtain{position:absolute;inset:0;z-index:1;display:grid;place-items:center;align-content:center;gap:6px;padding:16px;text-align:center;background:var(--grass-dark);color:var(--chalk);font-weight:600}
+.curtain svg{width:44px;height:44px;opacity:.9}
+@media(max-width:520px){
+  .camtop{flex-direction:column;align-items:flex-start}
+}
+@media(max-width:420px){
+  .brand{font-size:1.3rem}
+  .badge{width:56px;height:56px;font-size:2rem}
+}
+@media(prefers-reduced-motion:reduce){
+  *{animation:none !important;transition:none !important}
+}
+</style>
+</head>
+<body>
+<div class="field" aria-hidden="true"></div>
+<main>
+  <header class="top">
+    <div class="brand">
+      <svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="46" fill="#D8352A" stroke="#0F2A24" stroke-width="6"/><path d="M30 14C46 34 46 66 30 86M70 14C54 34 54 66 70 86" fill="none" stroke="#FFFDF6" stroke-width="5" stroke-dasharray="8 7"/></svg>
+      <span>Hand Cricket</span>
+    </div>
+    <div class="topr" id="roomBar" hidden>
+      <span class="chip" id="roomChip" aria-label="Room code"></span>
+      <button class="btn small" data-act="copy">Copy link</button>
+      <button class="btn small" data-act="leave">Leave</button>
+    </div>
+  </header>
+
+  <!-- HOME -->
+  <section id="home" class="home">
+    <div class="intro">
+      <h1>Hand cricket, over video.</h1>
+      <p class="lede">Make a room, send the code to a friend, and show your hand when the ball says go. The game reads your number and keeps the score.</p>
+      <div class="form">
+        <label for="name">Your name</label>
+        <input id="name" class="input" maxlength="14" autocomplete="nickname" placeholder="Name" enterkeyhint="done">
+        <div class="seg" role="radiogroup" aria-labelledby="wkLabel">
+          <span id="wkLabel" class="lbl">Wickets each</span>
+          <label><input type="radio" name="wk" value="1" checked><span>1</span></label>
+          <label><input type="radio" name="wk" value="2"><span>2</span></label>
+          <label><input type="radio" name="wk" value="3"><span>3</span></label>
+        </div>
+        <button id="btnCreate" class="btn sun">Create room</button>
+        <div class="or"><span>or join a friend</span></div>
+        <div class="joinrow">
+          <input id="code" class="input code-in" maxlength="5" placeholder="Room code" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-label="Room code">
+          <button id="btnJoin" class="btn">Join</button>
+        </div>
+      </div>
+      <details class="rules">
+        <summary>How scoring works</summary>
+        <ul>
+          <li>Both players show a number from 1 to 6 at the same moment.</li>
+          <li>The batter scores their number. If both numbers match, the batter is out.</li>
+          <li>When the batter is out, sides swap and the second player chases the target.</li>
+          <li>Highest score wins. A toss with both hands decides who picks bat or bowl: an even total goes to the room creator, an odd total to the joiner.</li>
+        </ul>
+      </details>
+    </div>
+    <div class="preview">
+      <div class="cam mine">
+        <video id="homeVideo" playsinline muted autoplay></video>
+        <div class="cover" id="camCover">
+          <span>Test your hand before you play.</span>
+          <button class="btn sun" id="camStart">Turn on camera</button>
+        </div>
+        <div class="badge" id="liveHome" hidden></div>
+      </div>
+      <p class="fine" id="trackerHome">Your video stays between you and your friend. Nothing is recorded.</p>
+      <p class="fine">1 to 4 fingers up is that number. An open hand is 5. A thumb on its own is 6. A closed fist doesn't count.</p>
+    </div>
+  </section>
+
+  <!-- GAME -->
+  <section id="game" hidden>
+    <div class="board">
+      <div class="side" id="meSide">
+        <span class="nm" id="meName">You</span>
+        <span class="sc" id="meScore">0</span>
+        <span class="role idle" id="meRole">Toss</span>
+        <div class="pips" id="mePips" aria-label="Wickets left"></div>
+      </div>
+      <div class="side" id="themSide">
+        <span class="nm" id="themName">Friend</span>
+        <span class="sc" id="themScore">0</span>
+        <span class="role idle" id="themRole">Toss</span>
+        <div class="pips" id="themPips" aria-label="Wickets left"></div>
+      </div>
+    </div>
+    <p class="target" id="targetLine"></p>
+
+    <div class="arena">
+      <div class="cam mine">
+        <video id="meVideo" playsinline muted autoplay></video>
+        <div class="camtop"><span class="tag" id="meTag">You</span><span class="tag soft" id="meLive">No hand</span></div>
+        <div class="badge" id="meBadge" hidden></div>
+      </div>
+      <div class="cam">
+        <video id="themVideo" playsinline autoplay muted></video>
+        <div class="cover" id="themWait"><span>Waiting for their camera…</span></div>
+        <div class="curtain" id="themCurtain" hidden>
+          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 24s8-12 20-12 20 12 20 12-8 12-20 12S4 24 4 24z"/><circle cx="24" cy="24" r="5"/><path d="M8 40L40 8"/></svg>
+          <span>Hidden until the reveal</span>
+        </div>
+        <div class="camtop"><span class="tag" id="themTag">Friend</span></div>
+        <div class="badge" id="themBadge" hidden></div>
+      </div>
+      <div class="ball word" id="ball" aria-hidden="true">
+        <svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="#D8352A" stroke="#0F2A24" stroke-width="4"/><path d="M30 12C46 34 46 66 30 88M70 12C54 34 54 66 70 88" fill="none" stroke="#FFFDF6" stroke-width="3.5" stroke-dasharray="6 6" opacity=".75"/></svg>
+        <span id="ballText">vs</span>
+      </div>
+    </div>
+
+    <div class="banner" aria-live="polite">
+      <div class="big" id="bannerBig"></div>
+      <div class="sub" id="bannerSub"></div>
+    </div>
+    <ol class="log" id="log" aria-label="Recent balls"></ol>
+    <div class="padwrap">
+      <div class="pad" id="pad" role="group" aria-label="Pick a number by hand">
+        <button type="button" data-n="1" aria-pressed="false">1</button>
+        <button type="button" data-n="2" aria-pressed="false">2</button>
+        <button type="button" data-n="3" aria-pressed="false">3</button>
+        <button type="button" data-n="4" aria-pressed="false">4</button>
+        <button type="button" data-n="5" aria-pressed="false">5</button>
+        <button type="button" data-n="6" aria-pressed="false">6</button>
+      </div>
+      <p class="fine">Hand not reading? Tap your number during the countdown, or press 1 to 6.</p>
+    </div>
+  </section>
+</main>
+
+<div class="overlay" id="overlay" hidden><div class="sheet" id="sheet" role="dialog" aria-modal="true"></div></div>
+<div class="toast" id="toast" role="status" hidden></div>
+
+<noscript><p style="padding:16px">Hand Cricket needs JavaScript.</p></noscript>
+
+<script src="https://unpkg.com/peerjs@1.5.5/dist/peerjs.min.js"></script>
+<script type="module">
+/* =====================================================================
+   Settings you may want to change
+   ===================================================================== */
+const CONFIG = {
+  // PeerJS's free cloud works out of the box for testing. For reliable play across
+  // strict networks, add your own STUN/TURN here, for example:
+  // [{urls:'stun:stun.l.google.com:19302'},{urls:'turn:YOUR_HOST:443',username:'USER',credential:'PASS'}]
+  ICE_SERVERS: null,
+  VOICE: false,        // true = also send your microphone
+  HIDE_OPPONENT: true, // cover your friend's video until both numbers are revealed
+  CODE_LEN: 5,
+  SHOW_MS: 900,        // time after "Show!" before your number locks in
+  NEXT_MS: 3200,       // pause between balls
+  // finger detection thresholds. Tune these if your hand reads wrong.
+  FINGER: { ext: 1.15, thumbAway: 1.06, thumbStraight: 145, thumbReach: 0.5 }
+};
+const MP_VERSION = '0.10.35';
+const MP_BUNDLE = `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${MP_VERSION}/vision_bundle.mjs`;
+const MP_WASM   = `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${MP_VERSION}/wasm`;
+const MP_MODEL  = 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task';
+const ID_PREFIX = 'handcricket-';
+const ALPHABET  = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+
+/* =====================================================================
+   Pure game logic (no DOM). Host is the referee.
+   ===================================================================== */
+// <logic>
+const other = s => (s === 'host' ? 'guest' : 'host');
+const clone = o => JSON.parse(JSON.stringify(o));
+const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z);
+
+// p = 21 hand landmarks (world coordinates). Returns 0 when no valid number.
+function countFingers(p, T) {
+  const palm = dist(p[0], p[9]);
+  if (!palm) return 0;
+  let n = 0;
+  for (const [tip, pip] of [[8, 6], [12, 10], [16, 14], [20, 18]]) {
+    if (dist(p[tip], p[0]) > dist(p[pip], p[0]) * T.ext) n++;
+  }
+  // thumb: must point away from the palm, be fairly straight and reach out
+  const v1 = { x: p[2].x - p[3].x, y: p[2].y - p[3].y, z: p[2].z - p[3].z };
+  const v2 = { x: p[4].x - p[3].x, y: p[4].y - p[3].y, z: p[4].z - p[3].z };
+  const l1 = Math.hypot(v1.x, v1.y, v1.z), l2 = Math.hypot(v2.x, v2.y, v2.z);
+  const cos = l1 && l2 ? (v1.x * v2.x + v1.y * v2.y + v1.z * v2.z) / (l1 * l2) : 1;
+  const straight = cos < Math.cos(T.thumbStraight * Math.PI / 180);
+  const away = dist(p[4], p[17]) > dist(p[3], p[17]) * T.thumbAway;
+  const reach = dist(p[4], p[5]) > palm * T.thumbReach;
+  const thumb = straight && away && reach;
+  if (n === 0) return thumb ? 6 : 0;
+  if (n === 4) return thumb ? 5 : 4;
+  return n;
+}
+
+// most common valid number in a list of readings, or 0 if no clear winner
+function pickNumber(list, min = 3) {
+  const c = [0, 0, 0, 0, 0, 0, 0];
+  for (const n of list) if (n >= 1 && n <= 6) c[n]++;
+  let best = 0;
+  for (let i = 1; i <= 6; i++) if (c[i] > c[best]) best = i;
+  return c[best] >= min ? best : 0;
+}
+
+function newGame(names, wickets, series) {
+  return {
+    phase: 'toss', wickets, names,
+    series: series || { host: 0, guest: 0, tie: 0 },
+    batter: null, inning: 0, tossWinner: null,
+    score: { host: 0, guest: 0 }, out: { host: 0, guest: 0 },
+    target: null, balls: 0, log: [], result: null
+  };
+}
+
+function applyToss(s0, h, g) {
+  const s = clone(s0), ev = { kind: 'toss', h, g };
+  if (!h || !g) { ev.kind = 'replay'; ev.missed = !h && !g ? 'both' : (!h ? 'host' : 'guest'); return { s, ev }; }
+  ev.sum = h + g;
+  ev.winner = ev.sum % 2 === 0 ? 'host' : 'guest';
+  s.tossWinner = ev.winner; s.phase = 'choose';
+  return { s, ev };
+}
+
+function applyChoice(s0, who, bat) {
+  const s = clone(s0);
+  if (s.phase !== 'choose' || who !== s.tossWinner) return s;
+  s.batter = bat ? who : other(who);
+  s.phase = 'play'; s.inning = 1; s.log = [];
+  return s;
+}
+
+function finish(s, winner) {
+  s.phase = 'over'; s.result = { winner };
+  if (winner === 'tie') s.series.tie++; else s.series[winner]++;
+}
+
+function applyBall(s0, h, g) {
+  const s = clone(s0), ev = { kind: 'ball', h, g };
+  if (!h || !g) { ev.kind = 'replay'; ev.missed = !h && !g ? 'both' : (!h ? 'host' : 'guest'); return { s, ev }; }
+  const bat = s.batter, bn = bat === 'host' ? h : g;
+  ev.bat = bat; s.balls++;
+  if (h === g) { s.out[bat]++; ev.out = true; ev.runs = 0; s.log.push({ n: bn, w: true }); }
+  else { s.score[bat] += bn; ev.out = false; ev.runs = bn; s.log.push({ n: bn, w: false }); }
+  if (s.log.length > 8) s.log.shift();
+  const allOut = s.out[bat] >= s.wickets;
+  if (s.inning === 1) {
+    if (allOut) { s.target = s.score[bat] + 1; s.batter = other(bat); s.inning = 2; s.log = []; ev.inningsOver = true; }
+  } else if (s.score[bat] >= s.target) { finish(s, bat); ev.matchOver = true; }
+  else if (allOut) { finish(s, s.score[bat] === s.target - 1 ? 'tie' : other(bat)); ev.matchOver = true; }
+  return { s, ev };
+}
+// </logic>
+
+/* =====================================================================
+   App
+   ===================================================================== */
+const $ = (s, r = document) => r.querySelector(s);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const rnd = n => { const a = new Uint8Array(n); crypto.getRandomValues(a); return [...a].map(b => b.toString(16).padStart(2, '0')).join(''); };
+const peerOpts = () => (CONFIG.ICE_SERVERS ? { config: { iceServers: CONFIG.ICE_SERVERS } } : {});
+
+let role = null, myName = 'Player', theirName = 'Friend', roomCode = '', wicketsCfg = 1;
+let peer = null, conn = null, call = null, local = null, noCam = false;
+let G = null;
+let tapped = null, readings = [], live = 0;
+let landmarker = null, tracker = 'idle', activeVideo = null, lastVT = -1, lastTs = 0, rafId = 0;
+let pend = null, curRound = 0, token = 0, showT = 0, timers = [], hostTimer = 0, watchdog = 0, joinTimer = 0;
+const inbox = {};
+let sheetKind = null;
+
+function toast(msg, ms = 3400) {
+  const t = $('#toast'); t.textContent = msg; t.hidden = false;
+  clearTimeout(toast.t); toast.t = setTimeout(() => { t.hidden = true; }, ms);
+}
+const nameOf = side => (side === role ? 'You' : (G?.names?.[side] || theirName));
+
+/* ---------- screens ---------- */
+function showScreen(name) {
+  $('#home').hidden = name !== 'home';
+  $('#game').hidden = name !== 'game';
+  $('#roomBar').hidden = name !== 'game';
+  activeVideo = name === 'home' ? $('#homeVideo') : $('#meVideo');
+  lastVT = -1;
+  window.scrollTo(0, 0);
+}
+function openSheet(kind, html) {
+  sheetKind = kind; $('#sheet').innerHTML = html; $('#overlay').hidden = false;
+  $('#sheet button')?.focus({ preventScroll: true });
+}
+function closeSheet() { sheetKind = null; $('#overlay').hidden = true; }
+
+/* ---------- camera ---------- */
+function blankStream() {
+  const c = document.createElement('canvas'); c.width = 320; c.height = 240;
+  const x = c.getContext('2d'); let k = 0;
+  const draw = () => { x.fillStyle = '#1E5236'; x.fillRect(0, 0, 320, 240); x.fillStyle = '#FFFDF6'; x.font = '20px sans-serif'; x.textAlign = 'center'; x.fillText('No camera', 160, 125 + (k++ % 2)); };
+  draw(); setInterval(draw, 500);
+  return c.captureStream(4);
+}
+function attachLocal(stream) {
+  for (const id of ['homeVideo', 'meVideo']) {
+    const v = $('#' + id); v.srcObject = stream; v.muted = true; v.play?.().catch(() => {});
+  }
+}
+let blank = null;
+async function startCamera() {
+  if (local && !noCam) return true;
+  $('#camCover').hidden = true;
+  try {
+    if (!navigator.mediaDevices?.getUserMedia) throw new Error('insecure');
+    local = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } },
+      audio: CONFIG.VOICE
+    });
+    noCam = false; attachLocal(local); initTracker(); startLoop();
+    return true;
+  } catch (e) {
+    noCam = true; blank = blank || blankStream(); local = blank; attachLocal(local);
+    $('#camCover').hidden = false;
+    $('#meLive').textContent = 'Tap a number';
+    $('#trackerHome').textContent = 'Camera is off. You can still play by tapping your number.';
+    toast(location.protocol === 'http:' && location.hostname !== 'localhost'
+      ? 'The camera needs https. Open the site over https, or tap numbers to play.'
+      : 'Camera is blocked. Allow it in your browser, or tap numbers to play.');
+    return false;
+  }
+}
+
+/* ---------- hand tracking ---------- */
+async function initTracker() {
+  if (landmarker || tracker === 'loading') return;
+  tracker = 'loading'; setTrackerText('Loading hand tracker…', 'Loading…');
+  try {
+    const { FilesetResolver, HandLandmarker } = await import(MP_BUNDLE);
+    const fileset = await FilesetResolver.forVisionTasks(MP_WASM);
+    const make = delegate => HandLandmarker.createFromOptions(fileset, {
+      baseOptions: { modelAssetPath: MP_MODEL, delegate },
+      runningMode: 'VIDEO', numHands: 1,
+      minHandDetectionConfidence: 0.5, minHandPresenceConfidence: 0.5, minTrackingConfidence: 0.5
+    });
+    try { landmarker = await make('GPU'); } catch { landmarker = await make('CPU'); }
+    tracker = 'ready'; setTrackerText('Hand tracker ready. Show a hand.', 'No hand');
+  } catch (e) {
+    console.error(e); tracker = 'failed';
+    setTrackerText('Hand tracker could not load. You can still tap numbers to play.', 'Tap a number');
+  }
+}
+function setTrackerText(t, liveText) { $('#trackerHome').textContent = t; if (liveText) $('#meLive').textContent = liveText; }
+
+function readHand(res, v) {
+  if (!res?.landmarks?.length) return 0;
+  let pts = res.worldLandmarks?.[0];
+  if (!pts || pts.length < 21) {            // fall back to image coordinates, aspect-corrected
+    const w = v.videoWidth || 1, h = v.videoHeight || 1;
+    pts = res.landmarks[0].map(l => ({ x: l.x * w, y: l.y * h, z: l.z * w }));
+  }
+  return countFingers(pts, CONFIG.FINGER);
+}
+function startLoop() {
+  if (rafId) return;
+  const loop = () => {
+    rafId = requestAnimationFrame(loop);
+    const v = activeVideo;
+    if (!landmarker || !v || v.readyState < 2 || !v.videoWidth || v.currentTime === lastVT) return;
+    const ts = performance.now();
+    if (ts - lastTs < 30) return;
+    lastVT = v.currentTime; lastTs = ts;
+    let n = 0;
+    try { n = readHand(landmarker.detectForVideo(v, ts), v); } catch (e) { n = 0; }
+    pushReading(n, ts);
+  };
+  rafId = requestAnimationFrame(loop);
+}
+function pushReading(n, t) {
+  readings.push({ t, n });
+  while (readings.length && t - readings[0].t > 2500) readings.shift();
+  const now = pickNumber(readings.slice(-5).map(r => r.n), 3);
+  if (now !== live) {
+    live = now;
+    const hb = $('#liveHome'); hb.hidden = !now || !$('#home').offsetParent; hb.textContent = now || '';
+    $('#meLive').textContent = now ? `Reading ${now}` : 'No hand';
+  }
+}
+
+/* ---------- networking ---------- */
+const send = o => { try { if (conn && conn.open) conn.send(o); } catch (e) { console.warn(e); } };
+const makeCode = () => { const a = new Uint8Array(CONFIG.CODE_LEN); crypto.getRandomValues(a); return [...a].map(b => ALPHABET[b % ALPHABET.length]).join(''); };
+const linkFor = code => `${location.origin}${location.pathname}?room=${code}`;
+
+function cleanName() {
+  const v = $('#name').value.trim().slice(0, 14) || 'Player';
+  try { localStorage.setItem('hc-name', v); } catch {}
+  return v;
+}
+function selectedWickets() { return Number(document.querySelector('input[name=wk]:checked')?.value || 1); }
+
+function openHost(attempt = 0) {
+  roomCode = makeCode();
+  peer = new Peer(ID_PREFIX + roomCode, peerOpts());
+  peer.on('open', () => {
+    $('#roomChip').textContent = roomCode;
+    openWaiting();
+  });
+  peer.on('connection', c => {
+    if (conn && conn.open) { c.on('open', () => { c.send({ t: 'full' }); setTimeout(() => c.close(), 400); }); return; }
+    setupConn(c);
+  });
+  peer.on('call', c => { c.answer(local); setupCall(c); });
+  peer.on('disconnected', () => { try { peer.reconnect(); } catch {} });
+  peer.on('error', err => {
+    if (err.type === 'unavailable-id' && attempt < 5) { try { peer.destroy(); } catch {} openHost(attempt + 1); return; }
+    netError(err);
+  });
+}
+function openGuest(code) {
+  roomCode = code; role = 'guest';
+  const hostId = ID_PREFIX + code;
+  peer = new Peer(undefined, peerOpts());
+  peer.on('open', () => {
+    const c = peer.connect(hostId, { reliable: true, serialization: 'json' });
+    setupConn(c);
+    setupCall(peer.call(hostId, local));
+    clearTimeout(joinTimer);
+    joinTimer = setTimeout(() => { if (!conn || !conn.open) { toast("Couldn't reach that room. Check the code and try again."); leaveRoom(); } }, 15000);
+  });
+  peer.on('disconnected', () => { try { peer.reconnect(); } catch {} });
+  peer.on('error', err => netError(err));
+}
+function netError(err) {
+  console.error(err);
+  if (err.type === 'peer-unavailable') toast('Room not found. Check the code.');
+  else if (err.type === 'network' || err.type === 'server-error' || err.type === 'socket-error' || err.type === 'socket-closed') toast('Connection problem. Check your internet and try again.');
+  else toast('Something went wrong connecting. Try again.');
+  if (!conn || !conn.open) leaveRoom();
+}
+function setupConn(c) {
+  conn = c;
+  c.on('open', () => {
+    clearTimeout(joinTimer);
+    if (role === 'guest') { showGame(); send({ t: 'hello', name: myName }); }
+  });
+  c.on('data', m => { try { onMsg(m); } catch (e) { console.error(e); } });
+  c.on('close', () => { if (conn === c) onPeerLeft(); });
+  c.on('error', e => console.warn(e));
+}
+function setupCall(c) {
+  call = c;
+  c.on('stream', s => {
+    const v = $('#themVideo'); v.srcObject = s; v.muted = !CONFIG.VOICE; v.play?.().catch(() => {});
+    $('#themWait').hidden = true;
+  });
+  c.on('close', () => { $('#themWait').hidden = false; });
+  c.on('error', e => console.warn(e));
+}
+function onPeerLeft() {
+  clearTimers(); clearTimeout(hostTimer); clearTimeout(watchdog);
+  if (!$('#game').hidden) {
+    openSheet('left', `<h2>Your friend left</h2><p>The game has ended.</p><div class="row"><button class="btn sun" data-act="leave">Back to start</button></div>`);
+  }
+}
+function leaveRoom() {
+  clearTimers(); clearTimeout(hostTimer); clearTimeout(watchdog); clearTimeout(joinTimer);
+  token++;
+  try { conn && conn.close(); } catch {} try { call && call.close(); } catch {} try { peer && peer.destroy(); } catch {}
+  peer = conn = call = null; G = null; pend = null; role = null; theirName = 'Friend';
+  $('#themVideo').srcObject = null; $('#themWait').hidden = false; setCurtain(false);
+  closeSheet(); showScreen('home');
+  history.replaceState(null, '', location.pathname);
+}
+
+/* ---------- room actions ---------- */
+const libOk = () => {
+  if (typeof Peer === 'undefined') { toast("Couldn't load the connection library. Check your internet and reload."); return false; }
+  return true;
+};
+async function createRoom() {
+  if (!libOk()) return;
+  myName = cleanName(); wicketsCfg = selectedWickets(); role = 'host';
+  $('#btnCreate').disabled = true;
+  await startCamera();
+  $('#btnCreate').disabled = false;
+  showGame();
+  openSheet('wait', '<h2>Making your room…</h2><p>One moment.</p>');
+  openHost();
+}
+async function joinRoom() {
+  if (!libOk()) return;
+  const code = $('#code').value.trim().toUpperCase();
+  if (code.length !== CONFIG.CODE_LEN) { toast(`Enter the ${CONFIG.CODE_LEN}-letter room code.`); $('#code').focus(); return; }
+  myName = cleanName();
+  $('#btnJoin').disabled = true;
+  await startCamera();
+  $('#btnJoin').disabled = false;
+  role = 'guest';
+  toast('Connecting…', 2500);
+  openGuest(code);
+}
+function showGame() {
+  showScreen('game');
+  $('#meTag').textContent = myName;
+  $('#roomChip').textContent = roomCode || '';
+  setBall('vs', true);
+  setBanner('', '');
+  setBadge('me', null); setBadge('them', null);
+}
+function openWaiting() {
+  const canShare = typeof navigator.share === 'function';
+  openSheet('wait', `
+    <h2>Waiting for a friend</h2>
+    <p>Share this code, or send the link.</p>
+    <div class="code" aria-label="Room code">${esc(roomCode)}</div>
+    <div class="row">
+      <button class="btn sun" data-act="copy">Copy link</button>
+      ${canShare ? '<button class="btn" data-act="share">Share</button>' : ''}
+    </div>
+    <p style="margin-top:14px"><button class="linkbtn" data-act="leave">Cancel room</button></p>`);
+}
+async function copyLink() {
+  const url = linkFor(roomCode);
+  try { await navigator.clipboard.writeText(url); toast('Link copied.'); }
+  catch {
+    const t = document.createElement('textarea'); t.value = url; t.style.position = 'fixed'; t.style.opacity = '0';
+    document.body.append(t); t.select();
+    try { document.execCommand('copy'); toast('Link copied.'); } catch { toast(url, 6000); }
+    t.remove();
+  }
+}
+
+/* ---------- messages ---------- */
+function onMsg(m) {
+  if (!m || typeof m !== 'object') return;
+  switch (m.t) {
+    case 'hello':
+      theirName = String(m.name || 'Friend').slice(0, 14);
+      $('#themTag').textContent = theirName;
+      if (role === 'host') { send({ t: 'hello', name: myName }); startNewGame(false); }
+      break;
+    case 'full': toast('That room already has two players.'); leaveRoom(); break;
+    case 'state': if (role === 'guest') { G = m.s; render(); announce(); afterState(0); } break;
+    case 'ball': if (role === 'guest') runBall(m.r, m.kind); break;
+    case 'commit': onCommit(m); break;
+    case 'reveal': onReveal(m); break;
+    case 'result': if (role === 'guest') { G = m.s; applyResult(m.ev); } break;
+    case 'choice': if (role === 'host') hostChoice('guest', !!m.bat); break;
+    case 'rematch': if (role === 'host') startNewGame(true); break;
+  }
+}
+
+/* ---------- ball timeline and fair reveal ---------- */
+function clearTimers() { timers.forEach(clearTimeout); timers = []; }
+function at(ms, fn, tok) { timers.push(setTimeout(() => { if (tok === token) fn(); }, ms)); }
+
+async function sha(str) {
+  if (!globalThis.crypto?.subtle) return 'nosubtle';
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+function runBall(r, kind) {
+  clearTimers();
+  const tok = ++token; curRound = r;
+  pend = { r, kind, sent: false, revealed: false, num: null, nonce: null, theirHash: inbox[r]?.commit ?? null, theirNum: null, done: false, bad: false };
+  setBadge('me', null); setBadge('them', null);
+  tapped = null; updatePad();
+  setCurtain(true);
+  const hint = kind === 'toss'
+    ? `Toss. Add both numbers: even and ${nameOf('host')} wins it, odd and ${nameOf('guest')} wins it.`
+    : 'Get your hand ready.';
+  setBanner('', hint);
+  setBall('Ready', true);
+  at(600, () => { setBall('3'); setBanner('', 'Hold your hand up to the camera.'); }, tok);
+  at(1400, () => setBall('2'), tok);
+  at(2200, () => setBall('1'), tok);
+  at(3000, () => { showT = performance.now(); setBall('Show!', true); setBanner('', 'Show your number now.'); }, tok);
+  at(3000 + CONFIG.SHOW_MS, () => lockNumber(tok), tok);
+}
+
+async function lockNumber(tok) {
+  const samples = readings.filter(x => x.t >= showT + 200).slice(-12).map(x => x.n);
+  const num = tapped ?? pickNumber(samples, 3);
+  tapped = null; updatePad();
+  setBall('…', true);
+  setBanner('', `Locked in. Waiting for ${nameOf(other(role))}…`);
+  const nonce = rnd(8);
+  const p = pend, r = p.r;
+  const h = await sha(`${r}:${num}:${nonce}`);
+  if (tok !== token || pend !== p) return;
+  p.num = num; p.nonce = nonce; p.sent = true;
+  send({ t: 'commit', r, h });
+  tryReveal();
+}
+function onCommit(m) {
+  if (!pend || m.r !== pend.r) { inbox[m.r] = { ...(inbox[m.r] || {}), commit: m.h }; return; }
+  pend.theirHash = m.h; tryReveal();
+}
+function tryReveal() {
+  const p = pend;
+  if (!p || p.revealed || !p.sent || p.theirHash == null) return;
+  p.revealed = true;
+  send({ t: 'reveal', r: p.r, num: p.num, nonce: p.nonce });
+  tryResolve();
+}
+async function onReveal(m) {
+  const p = pend;
+  if (!p || m.r !== p.r || p.theirNum != null) return;
+  const n = Number(m.num);
+  if (!Number.isInteger(n) || n < 0 || n > 6) { p.bad = true; p.theirNum = 0; tryResolve(); return; }
+  const h = await sha(`${m.r}:${n}:${m.nonce}`);
+  if (pend !== p) return;
+  if (h !== 'nosubtle' && p.theirHash !== 'nosubtle' && h !== p.theirHash) p.bad = true;
+  p.theirNum = n; tryResolve();
+}
+function tryResolve() {
+  const p = pend;
+  if (!p || p.done || !p.revealed || p.theirNum == null) return;
+  p.done = true;
+  setCurtain(false);
+  setBadge('me', p.num); setBadge('them', p.theirNum);
+  setBall('•', true);
+  if (role === 'host') {
+    const h = p.num, g = p.theirNum;
+    hostResolve(h, g, p.bad);
+  }
+}
+
+/* ---------- host: referee ---------- */
+function startNewGame(rematch) {
+  clearTimers(); clearTimeout(hostTimer); clearTimeout(watchdog); token++;
+  G = newGame({ host: myName, guest: theirName }, wicketsCfg, rematch && G ? G.series : undefined);
+  send({ t: 'state', s: G });
+  closeSheet(); render(); announce();
+  hostTimer = setTimeout(hostStartBall, 2600);
+}
+function hostStartBall() {
+  if (!G || !conn || !conn.open || (G.phase !== 'toss' && G.phase !== 'play')) return;
+  const r = (hostStartBall.r = (hostStartBall.r || 0) + 1);
+  send({ t: 'ball', r, kind: G.phase });
+  runBall(r, G.phase);
+  clearTimeout(watchdog);
+  watchdog = setTimeout(() => {
+    if (pend && !pend.done) { toast('Connection hiccup. Replaying the ball.'); hostStartBall(); }
+  }, 15000);
+}
+function hostResolve(h, g, bad) {
+  clearTimeout(watchdog);
+  let out;
+  if (bad) out = { s: clone(G), ev: { kind: 'replay', h, g, bad: true } };
+  else out = G.phase === 'toss' ? applyToss(G, h, g) : applyBall(G, h, g);
+  G = out.s;
+  send({ t: 'result', s: G, ev: out.ev });
+  applyResult(out.ev);
+  if (G.phase === 'toss' || G.phase === 'play') {
+    const wait = out.ev.kind === 'replay' ? 2000 : out.ev.inningsOver ? 4600 : CONFIG.NEXT_MS;
+    clearTimeout(hostTimer); hostTimer = setTimeout(hostStartBall, wait);
+  }
+}
+function hostChoice(who, bat) {
+  if (!G || G.phase !== 'choose' || who !== G.tossWinner) return;
+  G = applyChoice(G, who, bat);
+  send({ t: 'state', s: G });
+  render(); announce(); afterState(0);
+  clearTimeout(hostTimer); hostTimer = setTimeout(hostStartBall, 1800);
+}
+// what both players should read between balls at the very start of a phase
+function announce() {
+  if (!G) return;
+  setCurtain(false); setBadge('me', null); setBadge('them', null); setBall('vs', true);
+  if (G.phase === 'toss') {
+    setBanner('Toss', `Show a number. Even total and ${nameOf('host')} wins the toss, odd and ${nameOf('guest')} wins it.`);
+  } else if (G.phase === 'play' && G.balls === 0) {
+    setBanner('', `${G.batter === role ? 'You bat' : nameOf(G.batter) + ' bats'} first.`);
+  }
+}
+
+/* ---------- both sides: show what happened ---------- */
+function applyResult(ev) {
+  setCurtain(false);
+  if (ev.h != null) {
+    const mine = role === 'host' ? ev.h : ev.g, theirs = role === 'host' ? ev.g : ev.h;
+    setBadge('me', mine); setBadge('them', theirs);
+  }
+  setBall('•', true);
+  render();
+  const t = describe(ev);
+  setBanner(t.big, t.sub, t.cls);
+  afterState(ev.matchOver ? 2200 : (ev.kind === 'toss' ? 1800 : 0));
+}
+function describe(ev) {
+  if (ev.kind === 'replay') {
+    const sub = ev.bad ? "The numbers didn't match up. Replaying the ball."
+      : ev.missed === 'both' ? "Couldn't read either hand. Replaying."
+      : ev.missed === role ? "Couldn't read your hand. Hold it up clearly, or tap a number."
+      : `Couldn't read ${nameOf(ev.missed)}'s hand. Replaying.`;
+    return { big: 'Ball replayed', sub, cls: '' };
+  }
+  if (ev.kind === 'toss') return { big: `${nameOf(ev.winner)} won the toss`, sub: `${ev.h} + ${ev.g} = ${ev.sum}, which is ${ev.sum % 2 ? 'odd' : 'even'}.`, cls: '' };
+  const batN = ev.bat === 'host' ? ev.h : ev.g, bowlN = ev.bat === 'host' ? ev.g : ev.h;
+  let big, sub, cls;
+  if (ev.out) { big = 'Out!'; cls = 'out'; sub = `Both showed ${ev.h}.`; }
+  else {
+    big = ev.runs === 6 ? 'Six!' : `+${ev.runs}`; cls = 'runs';
+    sub = `${nameOf(ev.bat)} showed ${batN}. ${nameOf(other(ev.bat))} showed ${bowlN}.`;
+  }
+  if (ev.inningsOver) sub += ` Innings over. The target is ${G.target}.`;
+  return { big, sub, cls };
+}
+function afterState(delay) {
+  if (!G) return;
+  if (G.phase === 'choose') { later(delay, openChoose); }
+  else if (G.phase === 'over') { later(delay, openOver); }
+  else if (sheetKind === 'choose' || sheetKind === 'over' || sheetKind === 'wait') closeSheet();
+}
+function later(ms, fn) { ms ? setTimeout(() => { if (G) fn(); }, ms) : fn(); }
+function openChoose() {
+  if (!G || G.phase !== 'choose') return;
+  if (G.tossWinner === role) {
+    openSheet('choose', `<h2>You won the toss</h2><p>Pick how you want to start.</p>
+      <div class="row"><button class="btn sun" data-act="bat">Bat first</button><button class="btn" data-act="bowl">Bowl first</button></div>`);
+  } else {
+    openSheet('choose', `<h2>${esc(nameOf(G.tossWinner))} won the toss</h2><p>Waiting for their choice…</p>`);
+  }
+}
+function openOver() {
+  if (!G || G.phase !== 'over') return;
+  const w = G.result.winner;
+  const title = w === 'tie' ? "It's a tie" : w === role ? 'You win!' : `${esc(nameOf(w))} wins`;
+  const me = role, them = other(role);
+  const s = G.series, ties = s.tie ? `, ${s.tie} tied` : '';
+  openSheet('over', `<h2>${title}</h2>
+    <div class="score">You ${G.score[me]}, ${esc(nameOf(them))} ${G.score[them]}</div>
+    <p>Series: you ${s[me]}, ${esc(nameOf(them))} ${s[them]}${ties}.</p>
+    <div class="row"><button class="btn sun" data-act="again">Play again</button><button class="btn" data-act="leave">Leave</button></div>`);
+}
+
+/* ---------- drawing ---------- */
+function setBall(t, word) {
+  const b = $('#ball'); $('#ballText').textContent = t; b.classList.toggle('word', !!word);
+  b.classList.remove('tick'); void b.offsetWidth; b.classList.add('tick');
+}
+function setBanner(big, sub, cls) {
+  const b = $('#bannerBig'); b.textContent = big || ''; b.className = 'big' + (cls ? ' ' + cls : '');
+  $('#bannerSub').textContent = sub || '';
+}
+function setBadge(k, n) {
+  const b = $('#' + k + 'Badge');
+  if (n == null) { b.hidden = true; return; }
+  b.textContent = n || '–'; b.hidden = false;
+  b.classList.remove('pop'); void b.offsetWidth; b.classList.add('pop');
+}
+function setCurtain(on) {
+  $('#themCurtain').hidden = !(on && CONFIG.HIDE_OPPONENT);
+}
+function updatePad() {
+  document.querySelectorAll('#pad button').forEach(b => b.setAttribute('aria-pressed', String(Number(b.dataset.n) === tapped)));
+}
+function render() {
+  if (!G) return;
+  const me = role, them = other(role);
+  $('#themTag').textContent = G.names[them] || theirName;
+  for (const [k, side] of [['me', me], ['them', them]]) {
+    $('#' + k + 'Name').textContent = side === role ? 'You' : (G.names[side] || 'Friend');
+    $('#' + k + 'Score').textContent = G.score[side];
+    const bat = G.batter === side, bowl = G.batter === other(side);
+    const r = $('#' + k + 'Role');
+    r.textContent = bat ? 'Batting' : bowl ? 'Bowling' : 'Toss';
+    r.className = 'role' + (bowl ? ' bowl' : '') + (!bat && !bowl ? ' idle' : '');
+    $('#' + k + 'Side').classList.toggle('bat', bat);
+    const left = G.wickets - G.out[side];
+    $('#' + k + 'Pips').innerHTML = Array.from({ length: G.wickets }, (_, i) => `<span class="pip${i < left ? '' : ' lost'}"></span>`).join('');
+  }
+  let line = '';
+  if (G.phase === 'play' && G.inning === 2) {
+    const need = G.target - G.score[G.batter];
+    line = G.batter === role ? `You need ${need} to win.` : `${nameOf(G.batter)} needs ${need} to win.`;
+  } else if (G.phase === 'play') line = 'First innings. Set a target.';
+  $('#targetLine').textContent = line;
+  $('#log').innerHTML = G.log.map(e => `<li class="${e.w ? 'w' : ''}" title="${e.w ? 'Out' : e.n + ' runs'}">${e.w ? 'W' : e.n}</li>`).join('');
+}
+
+/* ---------- events ---------- */
+document.addEventListener('click', e => {
+  const pad = e.target.closest('#pad button');
+  if (pad) { const n = Number(pad.dataset.n); tapped = tapped === n ? null : n; updatePad(); return; }
+  const b = e.target.closest('[data-act]');
+  if (!b) return;
+  switch (b.dataset.act) {
+    case 'copy': copyLink(); break;
+    case 'share': navigator.share({ title: 'Hand Cricket', text: 'Join my hand cricket room', url: linkFor(roomCode) }).catch(() => {}); break;
+    case 'leave': leaveRoom(); break;
+    case 'bat': case 'bowl': {
+      const bat = b.dataset.act === 'bat';
+      if (role === 'host') hostChoice('host', bat); else { send({ t: 'choice', bat }); openSheet('choose', '<h2>Locked in</h2><p>Starting…</p>'); }
+      break;
+    }
+    case 'again':
+      if (role === 'host') startNewGame(true); else { send({ t: 'rematch' }); openSheet('over', '<h2>Asking for a rematch</h2><p>Starting in a moment…</p>'); }
+      break;
+  }
+});
+document.addEventListener('keydown', e => {
+  if ($('#game').hidden || e.target.matches('input,textarea') || e.metaKey || e.ctrlKey || e.altKey) return;
+  if (/^[1-6]$/.test(e.key)) { tapped = Number(e.key); updatePad(); }
+});
+$('#btnCreate').addEventListener('click', createRoom);
+$('#btnJoin').addEventListener('click', joinRoom);
+$('#camStart').addEventListener('click', startCamera);
+$('#code').addEventListener('input', e => { e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''); });
+$('#code').addEventListener('keydown', e => { if (e.key === 'Enter') joinRoom(); });
+$('#name').addEventListener('keydown', e => { if (e.key === 'Enter') ($('#code').value ? joinRoom() : createRoom()); });
+addEventListener('pagehide', () => { try { peer && peer.destroy(); } catch {} });
+
+/* ---------- boot ---------- */
+(function boot() {
+  try { $('#name').value = localStorage.getItem('hc-name') || ''; } catch {}
+  const room = new URLSearchParams(location.search).get('room');
+  if (room) {
+    $('#code').value = room.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, CONFIG.CODE_LEN);
+    $('#trackerHome').textContent = 'You were invited to a room. Add your name and press Join.';
+  }
+  showScreen('home');
+  updatePad();
+})();
+</script>
+</body>
+</html>
