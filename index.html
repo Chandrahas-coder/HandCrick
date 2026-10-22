@@ -585,7 +585,13 @@ function setupConn(c) {
   conn = c;
   c.on('open', () => {
     clearTimeout(joinTimer);
-    if (role === 'guest') { showGame(); send({ t: 'hello', name: myName }); }
+    if (role === 'host') {
+      showGame();
+      $('#themTag').textContent = theirName || 'Friend';
+    } else if (role === 'guest') {
+      showGame();
+      send({ t: 'hello', name: myName });
+    }
   });
   c.on('data', m => { try { onMsg(m); } catch (e) { console.error(e); } });
   c.on('close', () => { if (conn === c) onPeerLeft(); });
