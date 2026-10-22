@@ -78,6 +78,9 @@ h1{font:400 clamp(2.6rem,8vw,4.8rem)/1 var(--display);margin:0 0 14px;letter-spa
 .cam{position:relative;aspect-ratio:3/4;border:var(--stroke);border-radius:var(--r-lg);background:var(--grass-dark);overflow:hidden;box-shadow:0 5px 0 var(--ink)}
 .cam video{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:var(--grass-dark)}
 .cam.mine video{transform:scaleX(-1)}
+.voice-toggle{position:absolute;top:10px;right:10px;z-index:4;display:grid;place-items:center;width:36px;height:36px;border:var(--stroke);border-radius:50%;background:var(--chalk);box-shadow:0 2px 0 var(--ink);font-size:1.1rem;cursor:pointer}
+.voice-toggle[aria-pressed="false"]{background:rgba(255,253,246,.88)}
+.voice-toggle:active{transform:translateY(1px)}
 .camtop{position:absolute;top:10px;left:10px;right:10px;display:flex;justify-content:space-between;align-items:flex-start;gap:6px;z-index:2}
 .tag{max-width:100%;padding:4px 12px;background:var(--chalk);border:var(--stroke);border-radius:999px;font-weight:600;font-size:.9rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tag.soft{font-weight:500;font-size:.82rem}
@@ -195,6 +198,7 @@ h1{font:400 clamp(2.6rem,8vw,4.8rem)/1 var(--display);margin:0 0 14px;letter-spa
     </div>
     <div class="preview">
       <div class="cam mine">
+        <button class="voice-toggle" type="button" data-voice-toggle aria-label="Mute microphone" aria-pressed="true" title="Microphone on">🎙️</button>
         <video id="homeVideo" playsinline muted autoplay></video>
         <div class="cover" id="camCover">
           <span>Test your hand before you play.</span>
@@ -227,6 +231,7 @@ h1{font:400 clamp(2.6rem,8vw,4.8rem)/1 var(--display);margin:0 0 14px;letter-spa
 
     <div class="arena">
       <div class="cam mine">
+        <button class="voice-toggle" type="button" data-voice-toggle aria-label="Mute microphone" aria-pressed="true" title="Microphone on">🎙️</button>
         <video id="meVideo" playsinline muted autoplay></video>
         <div class="camtop"><span class="tag" id="meTag">You</span><span class="tag soft" id="meLive">No hand</span></div>
         <div class="badge" id="meBadge" hidden></div>
@@ -393,7 +398,7 @@ const rnd = n => { const a = new Uint8Array(n); crypto.getRandomValues(a); retur
 const peerOpts = () => (CONFIG.ICE_SERVERS ? { config: { iceServers: CONFIG.ICE_SERVERS } } : {});
 
 let role = null, myName = 'Player', theirName = 'Friend', roomCode = '', wicketsCfg = 1;
-let peer = null, conn = null, call = null, local = null, noCam = false;
+let peer = null, conn = null, call = null, local = null, noCam = false, voiceEnabled = true;
 let G = null;
 let tapped = null, readings = [], live = 0;
 let landmarker = null, tracker = 'idle', activeVideo = null, lastVT = -1, lastTs = 0, rafId = 0;
@@ -444,6 +449,20 @@ function attachLocal(stream) {
   for (const id of ['homeVideo', 'meVideo']) {
     const v = $('#' + id); v.srcObject = stream; v.muted = true; v.play?.().catch(() => {});
   }
+  syncVoiceButtonState();
+}
+function syncVoiceButtonState() {
+  const buttons = document.querySelectorAll('[data-voice-toggle]');
+  buttons.forEach(btn => {
+    const enabled = voiceEnabled;
+    btn.setAttribute('aria-pressed', String(enabled));
+    btn.textContent = enabled ? '🎙️' : '🔇';
+    btn.title = enabled ? 'Microphone on' : 'Microphone off';
+    btn.setAttribute('aria-label', enabled ? 'Mute microphone' : 'Enable microphone');
+  });
+  if (local && local.getAudioTracks?.().length) {
+    local.getAudioTracks().forEach(track => { track.enabled = voiceEnabled; });
+  }
 }
 let blank = null;
 async function startCamera() {
@@ -453,7 +472,7 @@ async function startCamera() {
     if (!navigator.mediaDevices?.getUserMedia) throw new Error('insecure');
     local = await navigator.mediaDevices.getUserMedia({
       video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } },
-      audio: CONFIG.VOICE
+      audio: true
     });
     noCam = false; attachLocal(local); initTracker(); startLoop();
     return true;
@@ -598,6 +617,7 @@ function setupConn(c) {
     showGame();
     if (role === 'host') {
       $('#themTag').textContent = theirName || 'Friend';
+      showLobbyState();
     } else if (role === 'guest') {
       send({ t: 'hello', name: myName });
     }
@@ -609,7 +629,7 @@ function setupConn(c) {
 function setupCall(c) {
   call = c;
   c.on('stream', s => {
-    const v = $('#themVideo'); v.srcObject = s; v.muted = !CONFIG.VOICE; v.play?.().catch(() => {});
+    const v = $('#themVideo'); v.srcObject = s; v.muted = false; v.play?.().catch(() => {});
     $('#themWait').hidden = true;
   });
   c.on('close', () => { $('#themWait').hidden = false; });
@@ -665,6 +685,15 @@ function showGame() {
   setBall('vs', true);
   setBanner('', '');
   setBadge('me', null); setBadge('them', null);
+  if (!G && conn && conn.open) showLobbyState();
+}
+function showLobbyState() {
+  if (G) return;
+  if (role === 'host') {
+    openSheet('start', `<h2>Room is live</h2><p>Talk before the match starts. Press start when you’re both ready.</p><div class="row"><button class="btn sun" data-act="start">Start match</button></div>`);
+  } else {
+    openSheet('start', `<h2>Connected</h2><p>Talk before the match begins. Waiting for ${esc(nameOf('host'))} to start.</p>`);
+  }
 }
 function openWaiting() {
   const canShare = typeof navigator.share === 'function';
@@ -697,7 +726,7 @@ function onMsg(m) {
       theirName = String(m.name || 'Friend').slice(0, 14);
       showGame();
       $('#themTag').textContent = theirName;
-      if (role === 'host') { send({ t: 'hello', name: myName }); startNewGame(false); }
+      if (role === 'host') { send({ t: 'hello', name: myName }); }
       break;
     case 'full': toast('That room already has two players.'); leaveRoom(); break;
     case 'state': if (role === 'guest') { G = m.s; render(); announce(); afterState(0); } break;
@@ -951,6 +980,9 @@ document.addEventListener('click', e => {
     case 'copy': copyLink(); break;
     case 'share': navigator.share({ title: 'Hand Cricket', text: 'Join my hand cricket room', url: linkFor(roomCode) }).catch(() => {}); break;
     case 'leave': leaveRoom(); break;
+    case 'start':
+      if (role === 'host') startNewGame(false);
+      break;
     case 'bat': case 'bowl': {
       const bat = b.dataset.act === 'bat';
       if (role === 'host') hostChoice('host', bat); else { send({ t: 'choice', bat }); openSheet('choose', '<h2>Locked in</h2><p>Starting…</p>'); }
@@ -961,6 +993,14 @@ document.addEventListener('click', e => {
       break;
   }
 });
+document.addEventListener('click', e => {
+  const toggle = e.target.closest('[data-voice-toggle]');
+  if (!toggle) return;
+  voiceEnabled = !voiceEnabled;
+  syncVoiceButtonState();
+  toast(voiceEnabled ? 'Microphone enabled' : 'Microphone muted', 1800);
+});
+
 document.addEventListener('keydown', e => {
   if ($('#game').hidden || e.target.matches('input,textarea') || e.metaKey || e.ctrlKey || e.altKey) return;
   if (/^[1-6]$/.test(e.key)) { tapped = Number(e.key); updatePad(); }
@@ -981,6 +1021,7 @@ addEventListener('pagehide', () => { try { peer && peer.destroy(); } catch {} })
     $('#code').value = room.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, CONFIG.CODE_LEN);
     $('#trackerHome').textContent = 'You were invited to a room. Add your name and press Join.';
   }
+  syncVoiceButtonState();
   showScreen('home');
   updatePad();
 })();
